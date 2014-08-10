@@ -22,6 +22,8 @@ import static java.util.Calendar.getInstance;
  */
 public class UserConnection implements Serializable, OnMessageListener {
 
+    private static final Logger LOG = Logger.getLogger(UserConnection.class.getName());
+
     private final User user;
     private final Socket connection;
     private final Calendar loginTime;
@@ -33,6 +35,7 @@ public class UserConnection implements Serializable, OnMessageListener {
     //A cache of the most recent message that has been sent.
     //We use this to avoid sending the message twice, especially when the connection is done between two users by the connection manager.
     private Message recentMessageSent;
+    private Message recentMessageReceived;
 
     public UserConnection(User user, Socket connection, Calendar loginTime) {
         this.user = user;
@@ -51,6 +54,16 @@ public class UserConnection implements Serializable, OnMessageListener {
         this.onMessageListeners.remove(onMessageListener);
     }
 
+    //Visble for testing
+    Message getRecentMessageSent() {
+        return recentMessageSent;
+    }
+
+    //Visible for testing
+    Message getRecentMessageReceived() {
+        return recentMessageReceived;
+    }
+
     private void listenForMessages() {
         new Thread(new Runnable() {
 
@@ -62,17 +75,22 @@ public class UserConnection implements Serializable, OnMessageListener {
     }
 
     private void processInCommingMessages() {
-        while (running) {
-            try {
+        try {
+            while (running) {
                 InputStream inn = connection.getInputStream();
                 ObjectInputStream objInn = new ObjectInputStream(inn);
-                Message message = (Message) objInn.readObject();
+                Message message = recentMessageReceived = (Message) objInn.readObject();
+                LOG.log(Level.INFO, "Received message: {0}='{'{1}'}'", new Object[]{message.getClass().getName(),
+                                                                                    message});
+
                 for (OnMessageListener onMessageListener : onMessageListeners) {
                     onMessageListener.onMessageReceived(message);
                 }
-            } catch (IOException | ClassNotFoundException ex) {
-                Logger.getLogger(UserConnection.class.getName()).log(Level.SEVERE, null, ex);
             }
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(UserConnection.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            running = false;
         }
     }
 
@@ -151,5 +169,8 @@ public class UserConnection implements Serializable, OnMessageListener {
     public void close() throws IOException {
         this.running = false;
         this.connection.close();
+        this.connectedUser.clear();
+        this.onMessageListeners.clear();
+        this.recentMessageSent = null;
     }
 }

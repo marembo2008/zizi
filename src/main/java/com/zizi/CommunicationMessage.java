@@ -5,6 +5,8 @@
  */
 package com.zizi;
 
+import java.util.Objects;
+
 /**
  * This message is intended for two users.
  *
@@ -23,4 +25,27 @@ public abstract class CommunicationMessage extends Message {
         return toUser;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = super.hashCode();
+        hash = 97 * hash + Objects.hashCode(this.toUser);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final CommunicationMessage other = (CommunicationMessage) obj;
+        return super.equals(obj) && Objects.equals(this.toUser, other.toUser);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + ", toUser=" + toUser;
+    }
 }

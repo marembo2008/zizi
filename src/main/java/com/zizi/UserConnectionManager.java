@@ -39,7 +39,10 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
      * Current instance of user connection.
      */
     private static UserConnectionManager userConnectionManager;
-    private static final int listeningPort = 35000;
+    //Visble for testing
+    static final int LISTENING_PORT = 35000;
+    //Visble for testing
+    private boolean started;
 
     private UserConnectionManager() {
     }
@@ -50,9 +53,32 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
 
     public void start() {
         running = true;
+        new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                start0();
+            }
+        }).start();
+        //wait for the connection to start.
+        synchronized (this) {
+            try {
+                this.wait(10000);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(UserConnectionManager.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    private void start0() {
         try {
-            serverListener = new ServerSocket(listeningPort);
+            serverListener = new ServerSocket(LISTENING_PORT);
             while (running) {
+                started = true;
+                LOG.info("Listening for socket connection.................");
+                synchronized (this) {
+                    this.notify();
+                }
                 final Socket socket = serverListener.accept();
                 handleUserConnection(socket);
             }
@@ -61,13 +87,26 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
         }
     }
 
+    //Visible for testing
+    boolean isStarted() {
+        return started;
+    }
+
     public void stop() {
         try {
             running = false;
+            serverListener.close();
+            serverListener = null;
+            //try to deregister from all userConnections if any.
+            for (UserConnection uc : CONNECTIONS.values()) {
+                uc.removeOnMessageListener(this);
+            }
+            CONNECTIONS.clear();
+            //We are singleton, so we can afford this.
+            userConnectionManager = null;
             for (UserConnection uc : CONNECTIONS.values()) {
                 uc.close();
             }
-            serverListener.close();
         } catch (IOException ex) {
             Logger.getLogger(UserConnectionManager.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -81,6 +120,10 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
      */
     public UserConnection findUserConnection(final User user) {
         return CONNECTIONS.get(user);
+    }
+
+    public int countLoggedInUsers() {
+        return CONNECTIONS.size();
     }
 
     private void handleUserConnection(final Socket socket) {
@@ -99,17 +142,20 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
                 return;
             }
             try {
+                //Find all the connected channels and inform them of a logout status message
+                LOG.info("Sending logout info messages to connected users...");
+                for (UserConnection userConn : userConnection.findAllUserConnections()) {
+                    userConn.removeOnMessageListener(userConnection); //Stop automatic forwarding to logged out user.
+                    userConn.removeUserConnection(user); //Remove from a list of connected users.
+                    StatusMessage statusMessage = new StatusMessage(StatusMessage.Status.OFFLINE, user, userConn
+                                                                    .getUser());
+                    LOG.log(Level.INFO, "Sending Logout Status Message: {0}", statusMessage);
+                    userConn.sendMessage(statusMessage);
+                }
                 //Stop the user connection
                 userConnection.close();
                 //Deregister the user.
                 CONNECTIONS.remove(user);
-                //Find all the connected channels and inform them of a logout status message
-                for (UserConnection users : userConnection.findAllUserConnections()) {
-                    users.removeOnMessageListener(userConnection); //Stop automatic forwarding to logged out user.
-                    users.removeUserConnection(user); //Remove from a list of connected users.
-                    StatusMessage statusMessage = new StatusMessage(StatusMessage.Status.OFFLINE, user, users.getUser());
-                    users.sendMessage(statusMessage);
-                }
             } catch (IOException ex) {
                 Logger.getLogger(UserConnectionManager.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -149,6 +195,7 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
             InputStream inn = socket.getInputStream();
             ObjectInputStream objInn = new ObjectInputStream(inn);
             LoginMessage message = (LoginMessage) objInn.readObject();
+            LOG.log(Level.INFO, "Received LoginMessage: {0} ", message);
             //We however knows this is the first connection, so a status message is expected.
             //Register the user.
             User user = message.getFromUser();

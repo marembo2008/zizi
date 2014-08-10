@@ -6,7 +6,11 @@
 package com.zizi;
 
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Objects;
+import javax.swing.text.DateFormatter;
 
 import static java.util.Calendar.getInstance;
 
@@ -29,6 +33,40 @@ public abstract class Message implements Serializable {
 
     public Calendar getTime() {
         return time;
+    }
+
+    @Override
+    public String toString() {
+        try {
+            return "fromUser=" + fromUser + ", "
+                    + "time=" + new DateFormatter(new SimpleDateFormat("yyyy, MM dd HH:mm:ss")).valueToString(time
+                            .getTime());
+        } catch (ParseException ex) {
+            return null;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + Objects.hashCode(this.fromUser);
+        hash = 97 * hash + Objects.hashCode(this.time);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Message other = (Message) obj;
+        if (!Objects.equals(this.fromUser, other.fromUser)) {
+            return false;
+        }
+        return Objects.equals(this.time, other.time);
     }
 
 }

@@ -54,14 +54,9 @@ public class User implements Serializable {
         this.name = name;
     }
 
-    /**
-     * Override toString to return the name of the user.
-     *
-     * @return
-     */
     @Override
     public String toString() {
-        return this.name;
+        return "User{" + "id=" + id + ", name=" + name + '}';
     }
 
     @Override
