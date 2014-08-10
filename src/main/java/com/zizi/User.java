@@ -1,11 +1,12 @@
 package com.zizi;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 /**
  * Represents the details of a user in this chat applications.
- *
- * @author marembo
  */
-public class User {
+public class User implements Serializable {
 
     /**
      * Unique id identifying the user.
@@ -61,6 +62,25 @@ public class User {
     @Override
     public String toString() {
         return this.name;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 19 * hash + Objects.hashCode(this.id);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final User other = (User) obj;
+        return Objects.equals(this.id, other.id);
     }
 
 }
