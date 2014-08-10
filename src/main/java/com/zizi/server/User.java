@@ -1,4 +1,4 @@
-package com.zizi;
+package com.zizi.server;
 
 import java.io.Serializable;
 import java.util.Objects;

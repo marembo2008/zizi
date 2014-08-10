@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.zizi;
+package com.zizi.server;
 
 /**
  * A Message sent when a user logs out of the application. This can be through session expired event, or user manually

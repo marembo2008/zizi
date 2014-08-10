@@ -1,4 +1,4 @@
-package com.zizi;
+package com.zizi.server;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -10,9 +10,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.zizi.UserConnectionManager.getUserConnectionManager;
+import static com.zizi.server.UserConnectionManager.getUserConnectionManager;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 

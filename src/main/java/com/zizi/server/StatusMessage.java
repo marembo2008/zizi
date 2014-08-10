@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.zizi;
+package com.zizi.server;
 
 /**
  * This message is a channel communication. It indicates the current status of the channel.
