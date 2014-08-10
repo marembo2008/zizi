@@ -131,18 +131,22 @@ public class UserConnectionManagerTest {
         TextMessage txtMessage = new TextMessage("This is from user0 to user1", user0.user, user1.user);
         sendMessage(user0.socket, txtMessage);
         Thread.sleep(1000); //wait for send to complete
-        UserConnection uc = ucm.findUserConnection(user0.user);
-        UserConnection uc1 = uc.findUserConnection(user1.user);
-        readMessage(user1.socket); //read the message so that it clears the buffer for the status message.
-        assertThat(uc1, notNullValue());
+        UserConnection uc0 = ucm.findUserConnection(user0.user);
+        UserConnection uc1 = ucm.findUserConnection(user1.user);
+        //Read the message so that it clears the buffer for the status message.
+        readMessage(user1.socket);
+        //Sending a txt message creates a connection between the users if none existed before.
+        //The Connection is bilateral.
+        assertThat(uc1.findUserConnection(user0.user), is(uc0));
+        assertThat(uc0.findUserConnection(user1.user), is(uc1));
 
         //Logout the current user
         LogoutMessage logoutMessage = new LogoutMessage(user0.user);
         sendMessage(user0.socket, logoutMessage);
         Thread.sleep(1000); //wait for send to complete
-        uc = ucm.findUserConnection(user0.user);
+        uc0 = ucm.findUserConnection(user0.user);
         uc1 = ucm.findUserConnection(user1.user);
-        assertThat(uc, nullValue()); //Deregistered.
+        assertThat(uc0, nullValue()); //Deregistered.
         assertThat(uc1.findUserConnection(user0.user), nullValue()); //nolonger part of the chat group
 
         //we receive status message with OFFLINE.
