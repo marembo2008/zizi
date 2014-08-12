@@ -44,7 +44,7 @@ public class TextMessage extends CommunicationMessage {
 
     @Override
     public String toString() {
-        return super.toString() + ", text=" + text;
+        return "TextMessage{" + super.toString() + ", text=" + text + "}";
     }
 
 }

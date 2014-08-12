@@ -5,20 +5,41 @@
  */
 package com.zizi.client;
 
+import com.zizi.server.LoginMessage;
+import com.zizi.server.LogoutMessage;
+import com.zizi.server.Message;
+import com.zizi.server.StatusMessage;
+import com.zizi.server.TextMessage;
 import com.zizi.server.User;
+import com.zizi.server.UserConnectionManager;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
+import org.jdesktop.swingbinding.impl.ListBindingManager;
 
 /**
  *
  * @author marembo
  */
-public class ChatWindow extends javax.swing.JPanel {
+public class ChatWindow extends javax.swing.JPanel implements MessageSender {
+
+    private static final Logger LOG = Logger.getLogger(ChatWindow.class.getName());
 
     /**
      * Creates new form ChatWindow
      */
+    @SuppressWarnings("LeakingThisInConstructor")
     public ChatWindow() {
         initComponents();
+        this.messageReceiver = this.userChatPanel;
+        this.userChatPanel.setMessageSender(this);
     }
 
     /**
@@ -33,20 +54,36 @@ public class ChatWindow extends javax.swing.JPanel {
         jScrollPane1 = new javax.swing.JScrollPane();
         onlineUsersList = new javax.swing.JList();
         userChatPanel = new com.zizi.client.ChatPanel();
+        userNameField = new javax.swing.JTextField();
+        loginLogoutBtn = new javax.swing.JButton();
 
         onlineUsersList.setModel(new javax.swing.AbstractListModel() {
             String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
             public int getSize() { return strings.length; }
             public Object getElementAt(int i) { return strings[i]; }
         });
+        onlineUsersList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
 
         org.jdesktop.beansbinding.ELProperty eLProperty = org.jdesktop.beansbinding.ELProperty.create("${usersOnline}");
         org.jdesktop.swingbinding.JListBinding jListBinding = org.jdesktop.swingbinding.SwingBindings.createJListBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, this, eLProperty, onlineUsersList);
+        jListBinding.setDetailBinding(org.jdesktop.beansbinding.ELProperty.create("${name}"));
         bindingGroup.addBinding(jListBinding);
-        org.jdesktop.beansbinding.Binding binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, this, org.jdesktop.beansbinding.ELProperty.create("${currentChatUser}"), onlineUsersList, org.jdesktop.beansbinding.BeanProperty.create("selectedElement"));
+        org.jdesktop.beansbinding.Binding binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, this, org.jdesktop.beansbinding.ELProperty.create("${chatPartner}"), onlineUsersList, org.jdesktop.beansbinding.BeanProperty.create("selectedElement"));
         bindingGroup.addBinding(binding);
 
         jScrollPane1.setViewportView(onlineUsersList);
+
+        userNameField.setToolTipText("Your nickname");
+
+        binding = org.jdesktop.beansbinding.Bindings.createAutoBinding(org.jdesktop.beansbinding.AutoBinding.UpdateStrategy.READ_WRITE, this, org.jdesktop.beansbinding.ELProperty.create("${user.name}"), userNameField, org.jdesktop.beansbinding.BeanProperty.create("text"));
+        bindingGroup.addBinding(binding);
+
+        loginLogoutBtn.setText("Login");
+        loginLogoutBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                loginLogoutBtnActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -54,7 +91,12 @@ public class ChatWindow extends javax.swing.JPanel {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(userChatPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(userChatPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(userNameField, javax.swing.GroupLayout.PREFERRED_SIZE, 310, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(loginLogoutBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 83, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addGap(18, 18, 18)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -64,26 +106,140 @@ public class ChatWindow extends javax.swing.JPanel {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1)
-                    .addComponent(userChatPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 434, Short.MAX_VALUE))
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 434, Short.MAX_VALUE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(userNameField)
+                            .addComponent(loginLogoutBtn))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(userChatPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 387, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
 
         bindingGroup.bind();
     }// </editor-fold>//GEN-END:initComponents
 
+    private void loginLogoutBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_loginLogoutBtnActionPerformed
+        // TODO add your handling code here:
+        if (userLoggedIn) {
+            logout();
+        } else {
+            login();
+        }
+    }//GEN-LAST:event_loginLogoutBtnActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JButton loginLogoutBtn;
     private javax.swing.JList onlineUsersList;
     private com.zizi.client.ChatPanel userChatPanel;
+    private javax.swing.JTextField userNameField;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;
     // End of variables declaration//GEN-END:variables
 
     //Online users, as reported by the server.
-    private List<User> usersOnline;
+    private List<User> usersOnline = new ArrayList<>();
     //The current selected user, with which the user is chatting with.
-    private User currentChatUser;
+    private User user = new User("Anonymous User");
+    private User chatPartner; //the user he is chatting with
+    private boolean userLoggedIn;
+    private boolean active;
+    private final MessageReceiver messageReceiver;
+    private Socket transportSocket;
+    private Thread receiverThread;
+
+    public boolean isUserLoggedIn() {
+        return userLoggedIn;
+    }
+
+    private void login() {
+        try {
+            loginLogoutBtn.setText("Logout");
+            active = true;
+            userLoggedIn = true;
+            LoginMessage message = new LoginMessage(user);
+            transportSocket = new Socket("localhost", UserConnectionManager.LISTENING_PORT);
+            sendMessage(message);
+            (receiverThread = new Thread(new Runnable() {
+
+                @Override
+                public void run() {
+                    while (active) {
+                        try {
+                            final InputStream inn = transportSocket.getInputStream();
+                            final ObjectInputStream objInn = new ObjectInputStream(inn);
+                            final Message incoming = (Message) objInn.readObject();
+                            handleMessage(incoming);
+                        } catch (Exception ex) {
+                            LOG.log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            })).start();
+        } catch (Exception ex) {
+            LOG.log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this, "Error logging you in", "Error logging in", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    void logout() {
+        try {
+            sendMessage(new LogoutMessage(user));
+            Thread.sleep(100);
+            userLoggedIn = false;
+            active = false;
+            transportSocket.close();
+            transportSocket = null;
+            usersOnline.clear();
+            chatPartner = null;
+            this.loginLogoutBtn.setText("Login");
+            this.user = new User("Anonymous user");
+        } catch (Exception ex) {
+            Logger.getLogger(ChatWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private void handleMessage(final Message message) {
+        System.out.println("Received Message: " + message);
+        if (message instanceof TextMessage) {
+            messageReceiver.messageReceived((TextMessage) message);
+            User fromUser = message.getFromUser();
+            if (chatPartner == null || !chatPartner.equals(fromUser)) {
+                chatPartner = fromUser;
+                ListBindingManager listModel = (ListBindingManager) this.onlineUsersList.getModel();
+                listModel.setElements(usersOnline, true);
+            }
+        } else if (message instanceof StatusMessage) {
+            //add new user or something
+            StatusMessage statusMessage = (StatusMessage) message;
+            switch (statusMessage.getStatus()) {
+                case ONLINE:
+                    //just logged in.
+                    newUserLoggedIn(message.getFromUser());
+                    break;
+                case OFFLINE:
+                    userLoggedOut(message.getFromUser());
+                    break;
+            }
+        }
+    }
+
+    private void newUserLoggedIn(final User user) {
+        usersOnline.add(user);
+        ListBindingManager listModel = (ListBindingManager) this.onlineUsersList.getModel();
+        listModel.setElements(usersOnline, true);
+//        this.onlineUsersList.updateUI();
+        System.out.println("Users online: " + usersOnline.size());
+        this.revalidate();
+    }
+
+    private void userLoggedOut(final User user) {
+        usersOnline.remove(user);
+        ListBindingManager listModel = (ListBindingManager) this.onlineUsersList.getModel();
+        listModel.setElements(usersOnline, true);
+//        this.revalidate();
+    }
 
     public List<User> getUsersOnline() {
         return usersOnline;
@@ -93,12 +249,54 @@ public class ChatWindow extends javax.swing.JPanel {
         this.usersOnline = usersOnline;
     }
 
-    public User getCurrentChatUser() {
-        return currentChatUser;
+    public User getUser() {
+        return user;
     }
 
-    public void setCurrentChatUser(User currentChatUser) {
-        this.currentChatUser = currentChatUser;
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public void setChatPartner(User chatPartner) {
+        this.chatPartner = chatPartner;
+    }
+
+    public User getChatPartner() {
+        return chatPartner;
+    }
+
+    @Override
+    public void sendMessage(String message) {
+        if (!userLoggedIn) {
+            JOptionPane.showMessageDialog(this, "You must login to start sending messages to users", "Login Required",
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        if (chatPartner == null) {
+            JOptionPane.showMessageDialog(this, "Please select users to chat with!", "No user to chat with",
+                                          JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        TextMessage txtMessage = new TextMessage(message, user, chatPartner);
+        sendMessage(txtMessage);
+    }
+
+    private void sendMessage(final Message txtMessage) {
+        try {
+            final ObjectOutputStream objOut = new ObjectOutputStream(transportSocket.getOutputStream());
+            objOut.writeObject(txtMessage);
+        } catch (IOException ex) {
+            Logger.getLogger(ChatWindow.class
+                    .getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(this,
+                                          "Error Sending your message.." + txtMessage, "Error Sending Message",
+                                          JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    @Override
+    public User getCurrentUser() {
+        return user;
     }
 
 }

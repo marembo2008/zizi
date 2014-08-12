@@ -32,7 +32,7 @@ public class StatusMessage extends CommunicationMessage {
 
     @Override
     public String toString() {
-        return super.toString() + ", Status=" + status;
+        return "StatusMessage{" + super.toString() + ", Status=" + status + "}";
     }
 
 }

@@ -40,7 +40,7 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
      */
     private static UserConnectionManager userConnectionManager;
     //Visble for testing
-    static final int LISTENING_PORT = 35000;
+    public static final int LISTENING_PORT = 35000;
     //Visble for testing
     private boolean started;
 
@@ -218,6 +218,7 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
      * @param userConnection
      */
     private void onUserLoggedIn(final UserConnection userConnection) {
+        System.out.println("Users connected: " + (CONNECTIONS.size() - 1));
         for (UserConnection uc : CONNECTIONS.values()) {
             //We do not connect the two users to chat here.
             //We simply inform him, that that a new user has just logged in.
@@ -225,6 +226,10 @@ public class UserConnectionManager implements Serializable, OnMessageListener {
                 StatusMessage message = new StatusMessage(StatusMessage.Status.ONLINE, userConnection.getUser(), uc
                                                           .getUser());
                 uc.sendMessage(message);
+                //but then, also send this uc a message that we are online!
+                StatusMessage message2 = new StatusMessage(StatusMessage.Status.ONLINE, uc.getUser(), userConnection
+                                                           .getUser());
+                userConnection.sendMessage(message2);
             }
         }
     }

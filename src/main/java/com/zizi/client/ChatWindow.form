@@ -18,7 +18,14 @@
       <Group type="103" groupAlignment="0" attributes="0">
           <Group type="102" alignment="1" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
-              <Component id="userChatPanel" min="-2" max="-2" attributes="0"/>
+              <Group type="103" groupAlignment="0" attributes="0">
+                  <Component id="userChatPanel" min="-2" max="-2" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Component id="userNameField" min="-2" pref="310" max="-2" attributes="0"/>
+                      <EmptySpace type="separate" max="-2" attributes="0"/>
+                      <Component id="loginLogoutBtn" min="-2" pref="83" max="-2" attributes="0"/>
+                  </Group>
+              </Group>
               <EmptySpace type="separate" max="-2" attributes="0"/>
               <Component id="jScrollPane1" min="-2" pref="182" max="-2" attributes="0"/>
               <EmptySpace max="32767" attributes="0"/>
@@ -30,8 +37,15 @@
           <Group type="102" alignment="0" attributes="0">
               <EmptySpace max="-2" attributes="0"/>
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="jScrollPane1" max="32767" attributes="0"/>
-                  <Component id="userChatPanel" pref="434" max="32767" attributes="0"/>
+                  <Component id="jScrollPane1" pref="434" max="32767" attributes="0"/>
+                  <Group type="102" attributes="0">
+                      <Group type="103" groupAlignment="3" attributes="0">
+                          <Component id="userNameField" alignment="3" max="32767" attributes="0"/>
+                          <Component id="loginLogoutBtn" alignment="3" min="-2" max="-2" attributes="0"/>
+                      </Group>
+                      <EmptySpace type="unrelated" max="-2" attributes="0"/>
+                      <Component id="userChatPanel" min="-2" pref="387" max="-2" attributes="0"/>
+                  </Group>
               </Group>
               <EmptySpace max="-2" attributes="0"/>
           </Group>
@@ -57,10 +71,13 @@
                 <StringItem index="4" value="Item 5"/>
               </StringArray>
             </Property>
+            <Property name="selectionMode" type="int" value="0"/>
           </Properties>
           <BindingProperties>
-            <BindingProperty name="elements" source="Form" sourcePath="${usersOnline}" target="onlineUsersList" targetPath="elements" updateStrategy="0" immediately="false"/>
-            <BindingProperty name="selectedElement" source="Form" sourcePath="${currentChatUser}" target="onlineUsersList" targetPath="selectedElement" updateStrategy="0" immediately="false">
+            <BindingProperty name="elements" source="Form" sourcePath="${usersOnline}" target="onlineUsersList" targetPath="elements" updateStrategy="0" immediately="false">
+              <BindingParameter name="DISPLAY" value="${name}"/>
+            </BindingProperty>
+            <BindingProperty name="selectedElement" source="Form" sourcePath="${chatPartner}" target="onlineUsersList" targetPath="selectedElement" updateStrategy="0" immediately="false">
               <BindingParameter name="IGNORE_ADJUSTING" value="N"/>
             </BindingProperty>
           </BindingProperties>
@@ -68,6 +85,24 @@
       </SubComponents>
     </Container>
     <Component class="com.zizi.client.ChatPanel" name="userChatPanel">
+    </Component>
+    <Component class="javax.swing.JTextField" name="userNameField">
+      <Properties>
+        <Property name="toolTipText" type="java.lang.String" value="Your nickname"/>
+      </Properties>
+      <BindingProperties>
+        <BindingProperty name="text" source="Form" sourcePath="${user.name}" target="userNameField" targetPath="text" updateStrategy="0" immediately="false">
+          <BindingParameter name="javax.swing.binding.ParameterKeys.TEXT_CHANGE_STRATEGY" value="javax.swing.binding.TextChangeStrategy.ON_TYPE"/>
+        </BindingProperty>
+      </BindingProperties>
+    </Component>
+    <Component class="javax.swing.JButton" name="loginLogoutBtn">
+      <Properties>
+        <Property name="text" type="java.lang.String" value="Login"/>
+      </Properties>
+      <Events>
+        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="loginLogoutBtnActionPerformed"/>
+      </Events>
     </Component>
   </SubComponents>
 </Form>

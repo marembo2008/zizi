@@ -1,10 +1,6 @@
 package com.zizi.client;
 
 import com.zizi.server.TextMessage;
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.border.Border;
-import javax.swing.border.EtchedBorder;
 
 /**
  * The chat panel where messages are displayed.
@@ -20,17 +16,11 @@ public class ChatPanel extends javax.swing.JPanel implements MessageReceiver {
 
     @Override
     public void messageReceived(TextMessage message) {
-
-        String msg = "<html>"
-                + "<body>"
-                + "<h2>Me: (" + message.getFromUser().getName() + ")  </h2>" + message.getText()
-                + "</body>"
-                + "</html>";
-        JLabel label = new JLabel(msg);
-        Border border = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
-        label.setBorder(border);
-        chatPanel.add(label);
-        this.validate();
+        System.err.println("Received: " + message);
+        String msg = message.getFromUser().getName() + ": " + message.getText();
+        String txt = chatArea.getText();
+        txt += "\n" + msg;
+        chatArea.setText(txt);
     }
 
     /**
@@ -45,8 +35,10 @@ public class ChatPanel extends javax.swing.JPanel implements MessageReceiver {
         jScrollPane1 = new javax.swing.JScrollPane();
         txtMessage = new javax.swing.JTextArea();
         sendTextBtn = new javax.swing.JButton();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        chatPanel = new javax.swing.JPanel();
+        jScrollPane3 = new javax.swing.JScrollPane();
+        chatArea = new javax.swing.JTextArea();
+        jLabel1 = new javax.swing.JLabel();
+        jSeparator1 = new javax.swing.JSeparator();
 
         setBackground(new java.awt.Color(106, 99, 92));
 
@@ -65,18 +57,14 @@ public class ChatPanel extends javax.swing.JPanel implements MessageReceiver {
             }
         });
 
-        javax.swing.GroupLayout chatPanelLayout = new javax.swing.GroupLayout(chatPanel);
-        chatPanel.setLayout(chatPanelLayout);
-        chatPanelLayout.setHorizontalGroup(
-            chatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 396, Short.MAX_VALUE)
-        );
-        chatPanelLayout.setVerticalGroup(
-            chatPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 389, Short.MAX_VALUE)
-        );
+        chatArea.setEditable(false);
+        chatArea.setColumns(20);
+        chatArea.setRows(5);
+        jScrollPane3.setViewportView(chatArea);
 
-        jScrollPane2.setViewportView(chatPanel);
+        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel1.setText("Welcome to your chat room....");
+        jLabel1.setOpaque(true);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
@@ -84,26 +72,33 @@ public class ChatPanel extends javax.swing.JPanel implements MessageReceiver {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane2)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 295, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(12, 12, 12)
-                        .addComponent(sendTextBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addContainerGap())
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                    .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jScrollPane3, javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 265, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(sendTextBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 125, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 391, Short.MAX_VALUE)
+                .addComponent(jLabel1)
+                .addGap(18, 18, 18)
+                .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
+                .addComponent(jScrollPane3, javax.swing.GroupLayout.DEFAULT_SIZE, 325, Short.MAX_VALUE)
                 .addGap(18, 18, 18)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 54, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addContainerGap())
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(sendTextBtn)
-                        .addGap(13, 13, 13)))
-                .addContainerGap())
+                        .addGap(24, 24, 24))))
         );
 
         bindingGroup.bind();
@@ -113,24 +108,22 @@ public class ChatPanel extends javax.swing.JPanel implements MessageReceiver {
         if (textMessage == null || textMessage.isEmpty() || messageSender == null) {
             return;
         }
-        String msg = "<html>"
-                + "<body>"
-                + "<h2>Me: (" + messageSender.getCurrentUser().getName() + ")  </h2>" + textMessage
-                + "</body>"
-                + "</html>";
-        JLabel label = new JLabel(msg);
-        Border border = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-        label.setBorder(border);
-        chatPanel.add(label);
-        this.validate();
+
+        String msg = messageSender.getCurrentUser().getName() + "(me): " + textMessage;
+        String txt = chatArea.getText();
+        txt += "\n" + msg;
+        chatArea.setText(txt);
         messageSender.sendMessage(textMessage);
+        txtMessage.setText("");
     }//GEN-LAST:event_sendTextBtnActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel chatPanel;
+    private javax.swing.JTextArea chatArea;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JButton sendTextBtn;
     private javax.swing.JTextArea txtMessage;
     private org.jdesktop.beansbinding.BindingGroup bindingGroup;
