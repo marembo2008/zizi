@@ -1,0 +1,11 @@
+How to to run the application:
+
+Open application on Netbeans or eclipse and start the chat server ChatServer.java
+Run any number of chat instances by running the ChatApplication.java
+
+If you have to run this on a commandline after compilation, you will need to specify the path for the beans-binding library.
+
+Say:
+
+java -cp /path/to-beans-binding.jar com.zizi.ChatServer //to start the server
+java -cp /path/to-beans-binding.jar com.zizi.ChatApplication //to start the client
